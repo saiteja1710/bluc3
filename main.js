@@ -25,31 +25,28 @@ const remoteVideo = document.getElementById("remoteVideo");
 // Ice server configuration with TURN servers for better connectivity
 const iceServers = {
   iceServers: [
-    {
-      urls: "stun:stun.relay.metered.ca:80",
-    },
-    {
-      urls: "turn:global.relay.metered.ca:80",
-      username: "819b4bc6abbb1fe5b83dd4ae",
-      credential: "Z2cRrW+CCGVZY4N4",
-    },
-    {
-      urls: "turn:global.relay.metered.ca:80?transport=tcp",
-      username: "819b4bc6abbb1fe5b83dd4ae",
-      credential: "Z2cRrW+CCGVZY4N4",
-    },
-    {
-      urls: "turn:global.relay.metered.ca:443",
-      username: "819b4bc6abbb1fe5b83dd4ae",
-      credential: "Z2cRrW+CCGVZY4N4",
-    },
-    {
-      urls: "turns:global.relay.metered.ca:443?transport=tcp",
-      username: "819b4bc6abbb1fe5b83dd4ae",
-      credential: "Z2cRrW+CCGVZY4N4",
-    },
-  ],
+    // STUN servers
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
 
+    // Free TURN servers - these improve NAT traversal on restrictive networks
+    {
+      urls: 'turn:relay1.expressturn.com:3480',
+      username: '174672462322246224',
+      credential: 'wPWy5/Q8xaF3LVOKZOdExrhnZ+4='
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ],
 };
 
 // Event listeners
