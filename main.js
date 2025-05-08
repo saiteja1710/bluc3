@@ -6,7 +6,7 @@ let peerConnection = null;
 let isVideoCallActive = false;
 
 // Initialize socket connection
-socket = io("http://localhost:3000/");
+socket = io("https://bluc2.onrender.com/");
 
 // DOM Elements
 const genderSelect = document.getElementById('gender');
