@@ -6,7 +6,7 @@ let peerConnection = null;
 let isVideoCallActive = false;
 
 // Initialize socket connection
-socket = io("https://bluc2.onrender.com/");
+socket = io("http://localhost:3000/");
 
 // DOM Elements
 const genderSelect = document.getElementById('gender');
@@ -22,12 +22,30 @@ const endCallButton = document.getElementById("end-call");
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 
-// Ice server configuration
+// Ice server configuration with TURN servers for better connectivity
 const iceServers = {
   iceServers: [
+    // STUN servers
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+
+    // Free TURN servers - these improve NAT traversal on restrictive networks
+    {
+      urls: 'turn:relay1.expressturn.com:3480',
+      username: '174672462322246224',
+      credential: 'wPWy5/Q8xaF3LVOKZOdExrhnZ+4='
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
   ],
 };
 
@@ -157,17 +175,31 @@ function createPeerConnection() {
   peerConnection.ontrack = (event) => {
     if (event.streams && event.streams[0]) {
       remoteVideo.srcObject = event.streams[0];
+      messagesTextarea.value += "\n✅ Remote video connected!";
     }
   };
 
   peerConnection.oniceconnectionstatechange = () => {
     console.log("ICE connection state:", peerConnection.iceConnectionState);
-    if (peerConnection.iceConnectionState === "failed" ||
-      peerConnection.iceConnectionState === "disconnected" ||
+    if (peerConnection.iceConnectionState === "connected") {
+      messagesTextarea.value += "\n🔗 Video connection established!";
+    } else if (peerConnection.iceConnectionState === "failed") {
+      messagesTextarea.value += "\n⚠️ Video connection failed. Try ending call and restarting.";
+      // Attempt to use TURN servers more aggressively on failure
+      peerConnection.getConfiguration().iceTransportPolicy = 'relay';
+    } else if (peerConnection.iceConnectionState === "disconnected" ||
       peerConnection.iceConnectionState === "closed") {
       messagesTextarea.value += "\n⚠️ Video connection lost.";
     }
   };
+
+  // Add connection timeout handler
+  setTimeout(() => {
+    if (peerConnection && peerConnection.iceConnectionState !== "connected" &&
+      peerConnection.iceConnectionState !== "completed") {
+      messagesTextarea.value += "\n⏱️ Connection taking longer than expected. This usually means a firewall issue.";
+    }
+  }, 10000);
 
   return peerConnection;
 }
@@ -268,3 +300,69 @@ socket.on("end-video", () => {
   endVideoCall();
   messagesTextarea.value += "\n📞 The other user ended the video call.";
 });
+
+
+
+// Add this to the bottom of your main.js file for better connection diagnostics
+
+// Connection diagnostics
+function runConnectionDiagnostics() {
+  if (!peerConnection) return;
+
+  const connectionState = {
+    iceConnectionState: peerConnection.iceConnectionState,
+    iceGatheringState: peerConnection.iceGatheringState,
+    connectionState: peerConnection.connectionState,
+    signalingState: peerConnection.signalingState
+  };
+
+  console.log("WebRTC Connection Diagnostics:", connectionState);
+
+  // Analyze connection
+  let diagnosticMsg = "\n📊 Connection Quality: ";
+
+  if (connectionState.iceConnectionState === "connected" ||
+    connectionState.iceConnectionState === "completed") {
+    diagnosticMsg += "Good";
+
+    // Check if using TURN
+    peerConnection.getStats(null).then(stats => {
+      let usingRelay = false;
+      stats.forEach(report => {
+        if (report.type === "candidate-pair" && report.selected) {
+          if (report.localCandidateType === "relay" || report.remoteCandidateType === "relay") {
+            usingRelay = true;
+            console.log("Using TURN relay server");
+          }
+        }
+      });
+
+      if (usingRelay) {
+        diagnosticMsg += " (using TURN relay)";
+        messagesTextarea.value += diagnosticMsg;
+      } else {
+        diagnosticMsg += " (direct or STUN connection)";
+        messagesTextarea.value += diagnosticMsg;
+      }
+    }).catch(err => {
+      console.error("Error getting connection stats:", err);
+    });
+  } else if (connectionState.iceConnectionState === "checking" ||
+    connectionState.iceGatheringState === "gathering") {
+    diagnosticMsg += "Establishing...";
+    messagesTextarea.value += diagnosticMsg;
+  } else {
+    diagnosticMsg += "Poor - Check your network settings";
+    messagesTextarea.value += diagnosticMsg;
+  }
+}
+
+// Add diagnostics button to your HTML
+const diagButton = document.createElement('button');
+diagButton.id = 'connection-diag';
+diagButton.textContent = 'Check Connection';
+diagButton.style.backgroundColor = '#2196F3';
+diagButton.addEventListener('click', runConnectionDiagnostics);
+
+// Insert the button after the end-call button
+endCallButton.parentNode.insertBefore(diagButton, endCallButton.nextSibling);
