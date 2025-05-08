@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omegle-like Chat</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Welcome to Random Chat</h1>
+  
+  <div>
+    <label>Choose Gender:</label>
+    <select id="gender">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
+  </div>
+  
+  <div>
+    <label>Choose Interest:</label>
+    <div id="interest-buttons">
+      <button type="button" data-interest="male">male</button>
+      <button type="button" data-interest="female">female</button>
+    </div>
+    <input type="text" id="interest" placeholder="Selected interest will appear here">
+  </div>
+  
+
+  <button id="find-match">Find Match</button>
+  <button id="disconnect">Disconnect</button> 
+  <button id="start-call">Start Video Call</button>
+ <button id="end-call">End Call</button>
+
+  <div id="video-container">
+    <h3>Video Call</h3>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+  </div>
+
+  <div id="chat">
+    <textarea id="messages" readonly></textarea>
+    <input type="text" id="message" placeholder="Type a message">
+    <button id="send-message">Send</button>
+  </div>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
